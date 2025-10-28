@@ -15,8 +15,8 @@ use App\Http\Controllers\EventController;
 // Controllers Admin
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudentController;
+use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\ScheduleController;
- // <--- IMPORTANTE
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\ScheduleController;
 |--------------------------------------------------------------------------
 */
 
+// 🔹 Página inicial (Welcome)
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -31,32 +32,42 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
-});
+})->name('welcome');
 
-// Dashboard padrão
+// 🔹 Painel principal (já funcionava)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    //professores
-    Route::resource('teachers', \App\Http\Controllers\Admin\TeacherController::class);
+    // Professores
+    Route::resource('teachers', TeacherController::class);
 
-    // CRUD de alunos (usa StudentController do Admin)
+    // Alunos
     Route::resource('students', StudentController::class);
 
-    // Outras tabelas/resources
+    // Documentos dos alunos
     Route::resource('student-documents', StudentDocumentController::class);
+
+    // Presenças
     Route::resource('attendances', AttendanceController::class);
+
+    // Boletins
     Route::resource('school-reports', SchoolReportController::class);
+
+    // Aulas
     Route::resource('lessons', LessonController::class);
+
+    // Eventos
     Route::resource('events', EventController::class);
+
+    // Cronogramas / Horários
     Route::resource('schedules', ScheduleController::class);
 });
 
-// Perfil do usuário autenticado
+// 🔹 Perfil padrão (Laravel Breeze)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
