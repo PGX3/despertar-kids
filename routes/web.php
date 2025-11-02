@@ -24,7 +24,7 @@ use App\Http\Controllers\Admin\ScheduleController;
 |--------------------------------------------------------------------------
 */
 
-// 🔹 Página inicial (Welcome)
+// 🔹 Página inicial
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -34,36 +34,57 @@ Route::get('/', function () {
     ]);
 })->name('welcome');
 
-// 🔹 Painel principal (já funcionava)
+// 🔹 Área autenticada ADMIN
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Professores
+    // ✅ Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    // ✅ Professores
     Route::resource('teachers', TeacherController::class);
 
-    // Alunos
+    // ✅ Alunos
     Route::resource('students', StudentController::class);
 
-    // Documentos dos alunos
+    // ✅ Documentos dos alunos
     Route::resource('student-documents', StudentDocumentController::class);
 
-    // Presenças
-    Route::resource('attendances', AttendanceController::class);
+    // ✅ Presenças
+    Route::prefix('attendances')->name('attendances.')->group(function () {
 
-    // Boletins
+        // Chamada do dia
+        Route::get('/', [AttendanceController::class, 'index'])
+            ->name('index');
+
+        // Histórico das chamadas
+        Route::get('/history', [AttendanceController::class, 'history'])
+            ->name('history');
+
+        // ✅ Ver uma chamada antiga
+        Route::get('/{date}', [AttendanceController::class, 'show'])
+            ->where('date', '\d{4}-\d{2}-\d{2}')
+            ->name('show');
+
+        // Salvar chamada
+        Route::post('/', [AttendanceController::class, 'store'])
+            ->name('store');
+    });
+
+    // ✅ Boletins
     Route::resource('school-reports', SchoolReportController::class);
 
-    // Aulas
+    // ✅ Aulas
     Route::resource('lessons', LessonController::class);
 
-    // Eventos
+    // ✅ Eventos
     Route::resource('events', EventController::class);
 
-    // Cronogramas / Horários
+    // ✅ Horários / Cronograma
     Route::resource('schedules', ScheduleController::class);
 });
 
-// 🔹 Perfil padrão (Laravel Breeze)
+// 🔹 Perfil do usuário
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
