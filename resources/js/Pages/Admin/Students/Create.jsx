@@ -27,7 +27,7 @@ export default function Create() {
     return (
         <AdminLayout>
             {/* fundo com gradiente */}
-            <div className="flex-1 min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-yellow-400 flex items-center justify-center p-6">
+            <div className="flex-1 min-h-screen bg-gradient-to-br flex items-center justify-center p-6">
                 <div className="flex w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden bg-white">
                     {/* Lado esquerdo fixo */}
                     <div className="hidden md:flex flex-col justify-center items-center w-1/3 bg-gradient-to-b from-blue-700 to-blue-500 p-10 text-white">

@@ -1,284 +1,143 @@
 import React, { useState } from "react";
+import { router } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import Calendar from "react-calendar";
+import dayjs from "dayjs";
 import "react-calendar/dist/Calendar.css";
-import { router } from "@inertiajs/react";
+import "dayjs/locale/pt-br";
 
-// Helper para converter Date -> YYYY-MM-DD local
-const toLocalYMD = (d) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-};
+dayjs.locale("pt-br");
 
-export default function Index({ schedules, users = [] }) {
-    const [date, setDate] = useState(new Date());
-    const [editing, setEditing] = useState(null);
-    const [form, setForm] = useState({ type: "", activity: "", user_id: "" });
+export default function ScheduleIndex({ schedules = [] }) {
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-    // Data selecionada
-    const selectedDate = toLocalYMD(date);
+  // Filtra os eventos do dia selecionado
+  const eventsOfDay = schedules.filter(
+    (event) =>
+      dayjs(event.schedule_date).format("YYYY-MM-DD") ===
+      dayjs(selectedDate).format("YYYY-MM-DD")
+  );
 
-    // Eventos do dia
-    const eventsOfDay = schedules.filter(
-        (s) => s.schedule_date === selectedDate
-    );
+  return (
+    <AdminLayout>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Cabeçalho */}
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-blue-600">📅</span> Calendário de Eventos
+            </h1>
 
-    // Eventos do mês
-    const eventsOfMonth = schedules.filter((s) =>
-        s.schedule_date.startsWith(selectedDate.slice(0, 7))
-    );
+            <button
+              onClick={() => router.visit(route("schedules.create"))}
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
+            >
+              + Novo Evento
+            </button>
+          </div>
 
-    // Excluir
-    const handleDelete = (id) => {
-        if (confirm("Tem certeza que deseja excluir este evento?")) {
-            router.delete(`/schedules/${id}`);
-        }
-    };
-
-    // Editar
-    const openEdit = (ev) => {
-        setEditing(ev);
-        setForm({
-            type: ev.type,
-            activity: ev.activity || "",
-            user_id: ev.user_id || "",
-        });
-    };
-
-    const handleUpdate = (e) => {
-        e.preventDefault();
-        router.put(`/schedules/${editing.id}`, form, {
-            onSuccess: () => setEditing(null),
-        });
-    };
-
-    // Criar novo (ao clicar no dia do calendário)
-    const handleClickDay = (value) => {
-        const clickedDate = toLocalYMD(value);
-        router.visit(`/schedules/create?date=${clickedDate}`);
-    };
-
-    return (
-        <AdminLayout>
-            <div className="flex justify-center items-start py-10 min-h-screen bg-gray-50">
-                <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Calendário */}
-                    <div className="bg-white rounded-2xl shadow-lg p-6">
-                        <h1 className="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2">
-                            📅 Calendário
-                        </h1>
-                        <div className="flex justify-center">
-                            <Calendar
-                                onChange={setDate}
-                                value={date}
-                                onClickDay={handleClickDay} // 👈 aqui chama o Create
-                                className="rounded-lg border shadow-sm p-3"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Eventos do dia */}
-                    <div className="bg-white rounded-2xl shadow-lg p-6">
-                        <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                            📌 Eventos do dia{" "}
-                            <span className="text-blue-600 font-medium">
-                                {date.toLocaleDateString("pt-BR")}
-                            </span>
-                        </h2>
-
-                        {eventsOfDay.length > 0 ? (
-                            <ul className="space-y-4">
-                                {eventsOfDay.map((ev) => (
-                                    <li
-                                        key={ev.id}
-                                        className="p-4 rounded-xl border bg-gradient-to-r from-blue-50 to-blue-100 shadow hover:shadow-md transition"
-                                    >
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <h3 className="font-bold text-blue-700 text-lg">
-                                                    {ev.type.toUpperCase()}
-                                                </h3>
-                                                {ev.activity && (
-                                                    <p className="text-gray-700">
-                                                        📖 {ev.activity}
-                                                    </p>
-                                                )}
-                                                {ev.user && (
-                                                    <p className="text-sm text-gray-600 mt-1">
-                                                        👨‍🏫 {ev.user.name}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => openEdit(ev)}
-                                                    className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200"
-                                                >
-                                                    Editar
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(ev.id)
-                                                    }
-                                                    className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
-                                                >
-                                                    Excluir
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-gray-500 italic">
-                                Nenhum evento neste dia.
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Eventos do mês */}
-                    <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
-                        <h2 className="text-xl font-semibold text-gray-700 mb-6 flex items-center gap-2">
-                            📅 Eventos do mês
-                        </h2>
-
-                        {eventsOfMonth.length > 0 ? (
-                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {eventsOfMonth.map((ev) => (
-                                    <div
-                                        key={ev.id}
-                                        className="p-5 border rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 shadow hover:shadow-md transition flex flex-col justify-between"
-                                    >
-                                        <div>
-                                            <p className="text-sm text-gray-500">
-                                                {new Date(
-                                                    ev.schedule_date
-                                                ).toLocaleDateString("pt-BR")}
-                                            </p>
-                                            <h3 className="font-bold text-blue-700 text-lg">
-                                                {ev.type.toUpperCase()}
-                                            </h3>
-                                            {ev.activity && (
-                                                <p className="text-gray-700 mt-1">
-                                                    📖 {ev.activity}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-2 mt-3">
-                                            <button
-                                                onClick={() => openEdit(ev)}
-                                                className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200"
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(ev.id)
-                                                }
-                                                className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
-                                            >
-                                                Excluir
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-gray-500 italic">
-                                Nenhum evento este mês.
-                            </p>
-                        )}
-                    </div>
-                </div>
+          {/* Grade principal */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Calendário */}
+            <div className="bg-white shadow rounded-2xl p-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-3">
+                Selecione uma data
+              </h2>
+              <Calendar
+                onChange={setSelectedDate}
+                value={selectedDate}
+                locale="pt-BR"
+                tileClassName={({ date }) =>
+                  schedules.some(
+                    (event) =>
+                      dayjs(event.schedule_date).format("YYYY-MM-DD") ===
+                      dayjs(date).format("YYYY-MM-DD")
+                  )
+                    ? "bg-blue-100 text-blue-700 font-semibold rounded-lg"
+                    : null
+                }
+              />
             </div>
 
-            {/* Modal edição */}
-            {editing && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
-                        <h2 className="text-lg font-bold text-blue-700 mb-4">
-                            Editar Evento
-                        </h2>
-                        <form onSubmit={handleUpdate} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium">
-                                    Tipo
-                                </label>
-                                <select
-                                    value={form.type}
-                                    onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            type: e.target.value,
-                                        })
-                                    }
-                                    className="w-full border rounded-lg px-3 py-2"
-                                >
-                                    <option value="onibus">Ônibus</option>
-                                    <option value="reforco">Reforço</option>
-                                    <option value="atividade">Atividade</option>
-                                    <option value="palavra">Palavra</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium">
-                                    Descrição
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.activity}
-                                    onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            activity: e.target.value,
-                                        })
-                                    }
-                                    className="w-full border rounded-lg px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium">
-                                    Professor responsável
-                                </label>
-                                <select
-                                    value={form.user_id}
-                                    onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            user_id: e.target.value,
-                                        })
-                                    }
-                                    className="w-full border rounded-lg px-3 py-2"
-                                >
-                                    <option value="">Selecione</option>
-                                    {users.map((u) => (
-                                        <option key={u.id} value={u.id}>
-                                            {u.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setEditing(null)}
-                                    className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                                >
-                                    Salvar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+            {/* Eventos do dia */}
+            <div className="bg-white shadow rounded-2xl p-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-3">
+                {eventsOfDay.length > 0
+                  ? `Eventos em ${dayjs(selectedDate).format("D [de] MMMM")}`
+                  : `Nenhum evento em ${dayjs(selectedDate).format("D [de] MMMM")}`}
+              </h2>
+
+              {eventsOfDay.length > 0 ? (
+                <ul className="space-y-4">
+                  {eventsOfDay.map((event) => (
+                    <li
+                      key={event.id}
+                      className="border rounded-xl p-4 hover:bg-gray-50 transition"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-blue-600 font-semibold text-base">
+                            {event.activity || "Sem título"}
+                          </p>
+                          <p className="text-sm text-gray-500 capitalize mt-0.5">
+                            Tipo: {event.type}
+                          </p>
+                          {event.teachers?.length > 0 && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              👩‍🏫{" "}
+                              {event.teachers.map((t) => t.name).join(", ")}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1">
+                            {dayjs(event.schedule_date).format("DD/MM/YYYY HH:mm")}
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() =>
+                              router.visit(route("schedules.edit", event.id))
+                            }
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() =>
+                              router.delete(route("schedules.destroy", event.id))
+                            }
+                            className="text-sm text-red-500 hover:underline"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-400 py-10">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-12 w-12 mb-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10m-12 8h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <p className="text-sm">Nenhum evento nesta data</p>
                 </div>
-            )}
-        </AdminLayout>
-    );
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
+  );
 }

@@ -62,6 +62,5 @@ export default function Dashboard() {
     );
 }
 
-// ✅ 🧩 AQUI GARANTE QUE O LAYOUT SEJA USADO!
 import AdminLayout from "@/Layouts/AdminLayout";
 Dashboard.layout = (page) => <AdminLayout>{page}</AdminLayout>;
