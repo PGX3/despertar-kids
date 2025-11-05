@@ -101,10 +101,10 @@ export default function Create({ date, teachers }) {
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               >
                 <option value="">Selecione...</option>
-                <option value="palavra">📖 Palavra</option>
-                <option value="onibus">🚌 Ônibus</option>
-                <option value="reforco">🧩 Reforço</option>
-                <option value="evento">🎉 Evento / Atividade</option>
+                <option value="palavra">Palavra</option>
+                <option value="onibus">Ônibus</option>
+                <option value="reforco">Reforço</option>
+                <option value="evento">Evento / Atividade</option>
               </select>
             </div>
 

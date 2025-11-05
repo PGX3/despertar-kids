@@ -11,21 +11,56 @@ dayjs.locale("pt-br");
 export default function ScheduleIndex({ schedules = [] }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Filtra os eventos do dia selecionado
+  // Eventos do dia selecionado
   const eventsOfDay = schedules.filter(
     (event) =>
       dayjs(event.schedule_date).format("YYYY-MM-DD") ===
       dayjs(selectedDate).format("YYYY-MM-DD")
   );
 
+  // Eventos do mês atual
+  const eventsOfMonth = schedules.filter(
+    (event) =>
+      dayjs(event.schedule_date).month() === dayjs(selectedDate).month() &&
+      dayjs(event.schedule_date).year() === dayjs(selectedDate).year()
+  );
+
+  // Agrupa por tipo
+  const groupByType = (list) =>
+    list.reduce((groups, event) => {
+      const type = event.type || "outros";
+      if (!groups[type]) groups[type] = [];
+      groups[type].push(event);
+      return groups;
+    }, {});
+
+  const groupedDayEvents = groupByType(eventsOfDay);
+  const groupedMonthEvents = groupByType(eventsOfMonth);
+
+  const typeLabels = {
+    onibus: "🚌 Ônibus",
+    reforco: "📘 Reforço",
+    palavra: "📖 Palavra",
+    evento: "🎉 Evento / Atividade",
+    outros: "📅 Outros",
+  };
+
+  const typeColors = {
+    onibus: "border-blue-300 bg-blue-50",
+    reforco: "border-green-300 bg-green-50",
+    palavra: "border-purple-300 bg-purple-50",
+    evento: "border-yellow-300 bg-yellow-50",
+    outros: "border-gray-300 bg-gray-50",
+  };
+
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto space-y-8">
           {/* Cabeçalho */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <span className="text-blue-600">📅</span> Calendário de Eventos
+              Calendário de Eventos
             </h1>
 
             <button
@@ -62,82 +97,130 @@ export default function ScheduleIndex({ schedules = [] }) {
             {/* Eventos do dia */}
             <div className="bg-white shadow rounded-2xl p-6">
               <h2 className="text-lg font-semibold text-gray-700 mb-3">
-                {eventsOfDay.length > 0
-                  ? `Eventos em ${dayjs(selectedDate).format("D [de] MMMM")}`
-                  : `Nenhum evento em ${dayjs(selectedDate).format("D [de] MMMM")}`}
+                {dayjs(selectedDate).format("D [de] MMMM")}
               </h2>
 
-              {eventsOfDay.length > 0 ? (
-                <ul className="space-y-4">
-                  {eventsOfDay.map((event) => (
-                    <li
-                      key={event.id}
-                      className="border rounded-xl p-4 hover:bg-gray-50 transition"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-blue-600 font-semibold text-base">
-                            {event.activity || "Sem título"}
-                          </p>
-                          <p className="text-sm text-gray-500 capitalize mt-0.5">
-                            Tipo: {event.type}
-                          </p>
-                          {event.teachers?.length > 0 && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              👩‍🏫{" "}
-                              {event.teachers.map((t) => t.name).join(", ")}
+              {/* Quadros fixos do dia selecionado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                {/* Ônibus */}
+                <div className={`border ${typeColors.onibus} rounded-xl p-4`}>
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    {typeLabels.onibus}
+                  </h3>
+                  {groupedDayEvents.onibus?.length ? (
+                    <ul className="space-y-2">
+                      {groupedDayEvents.onibus.map((event) => (
+                        <li
+                          key={event.id}
+                          className="bg-white border rounded-lg p-4 flex justify-between items-start shadow-sm hover:shadow transition"
+                        >
+                          <div>
+                            <p className="text-blue-600 font-semibold text-base">
+                              {event.activity || "Sem título"}
                             </p>
-                          )}
-                          <p className="text-xs text-gray-400 mt-1">
-                            {dayjs(event.schedule_date).format("DD/MM/YYYY HH:mm")}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() =>
-                              router.visit(route("schedules.edit", event.id))
-                            }
-                            className="text-sm text-blue-600 hover:underline"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() =>
-                              router.delete(route("schedules.destroy", event.id))
-                            }
-                            className="text-sm text-red-500 hover:underline"
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="flex flex-col items-center justify-center text-gray-400 py-10">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12 mb-2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10m-12 8h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="text-sm">Nenhum evento nesta data</p>
+                            {event.teachers?.length > 0 && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                👩‍🏫{" "}
+                                {event.teachers.map((t) => t.name).join(", ")}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-1">
+                              {dayjs(event.schedule_date).format(
+                                "DD/MM/YYYY HH:mm"
+                              )}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      Nenhuma escala de ônibus neste dia.
+                    </p>
+                  )}
                 </div>
-              )}
+
+                {/* Reforço */}
+                <div className={`border ${typeColors.reforco} rounded-xl p-4`}>
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    {typeLabels.reforco}
+                  </h3>
+                  {groupedDayEvents.reforco?.length ? (
+                    <ul className="space-y-2">
+                      {groupedDayEvents.reforco.map((event) => (
+                        <li
+                          key={event.id}
+                          className="bg-white border rounded-lg p-4 shadow-sm"
+                        >
+                          <p className="text-blue-600 font-semibold text-base">
+                            {event.activity}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      Nenhum reforço cadastrado neste dia.
+                    </p>
+                  )}
+                </div>
+
+                {/* Palavra */}
+                <div className={`border ${typeColors.palavra} rounded-xl p-4`}>
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    {typeLabels.palavra}
+                  </h3>
+                  {groupedDayEvents.palavra?.length ? (
+                    <ul className="space-y-2">
+                      {groupedDayEvents.palavra.map((event) => (
+                        <li
+                          key={event.id}
+                          className="bg-white border rounded-lg p-4 shadow-sm"
+                        >
+                          <p className="text-blue-600 font-semibold text-base">
+                            {event.activity}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      Nenhuma palavra cadastrada neste dia.
+                    </p>
+                  )}
+                </div>
+
+                {/* Eventos gerais */}
+                <div className={`border ${typeColors.evento} rounded-xl p-4`}>
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    {typeLabels.evento}
+                  </h3>
+                  {groupedDayEvents.evento?.length ? (
+                    <ul className="space-y-2">
+                      {groupedDayEvents.evento.map((event) => (
+                        <li
+                          key={event.id}
+                          className="bg-white border rounded-lg p-4 shadow-sm"
+                        >
+                          <p className="text-blue-600 font-semibold text-base">
+                            {event.activity}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      Nenhum evento geral neste dia.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
+
+          </div>
         </div>
-      </div>
+      
     </AdminLayout>
   );
 }
